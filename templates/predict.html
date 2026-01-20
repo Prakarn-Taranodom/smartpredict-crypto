@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stock Prediction - SmartPredict Stock</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h3 {
+            color: #34495e;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+
+        h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        h5 {
+            color: #34495e;
+            margin: 15px 0 10px 0;
+            font-size: 1em;
+        }
+
+        form {
+            text-align: center;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 30px;
+            border-radius: 10px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            max-width: 400px;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #2980b9;
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
+        }
+
+        button[type="submit"] {
+            padding: 12px 30px;
+            font-size: 16px;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.4);
+        }
+
+        .back-button {
+            display: inline-block;
+            margin: 20px 0;
+            padding: 10px 20px;
+            background: #95a5a6;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: #7f8c8d;
+            transform: translateY(-2px);
+        }
+
+        .error {
+            background: #ffe6e6;
+            border-left: 4px solid #e74c3c;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            color: #c0392b;
+        }
+
+        .success {
+            background: #e6ffe6;
+            border-left: 4px solid #27ae60;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            color: #229954;
+        }
+
+        .table-box {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .prediction-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        .prediction-table th {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .prediction-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .prediction-table tr:hover {
+            background: #f0f0f0;
+        }
+
+        .company-stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .stats-column {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .stat-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-item strong {
+            color: #2c3e50;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .feature-importance-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        .feature-importance-table th {
+            background: linear-gradient(45deg, #9b59b6, #8e44ad);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .feature-importance-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .feature-importance-table tr:hover {
+            background: #f0f0f0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+            color: #7f8c8d;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            border-top: 1px solid #e0e0e0;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📈 Stock Prediction</h1>
+        
+        <a href="/" class="back-button">← Back to Home</a>
+
+        <!-- Prediction Form -->
+        <div style="margin: 30px 0;">
+            <h3>Enter Stock Ticker</h3>
+            <form method="post" action="/predict">
+                <div style="margin-bottom: 15px;">
+                    <input type="text" name="ticker" placeholder="Enter stock ticker (e.g., AAPL, TSLA, GOOGL)" required>
+                    <div style="font-size: 14px; color: #7f8c8d; text-align: center; margin-top: 10px;">
+                        <strong>📈 Stocks:</strong> AAPL, MSFT, TSLA, GOOGL, META, NVDA<br>
+                        <strong>💰 Crypto:</strong> BTC-USD, ETH-USD, BNB-USD, SOL-USD, XRP-USD<br>
+                        <small style="color: #e74c3c;">⚠️ For crypto, use format: SYMBOL-USD (e.g., BTC-USD for Bitcoin)</small><br>
+                        <small>Find more symbols at <a href="https://finance.yahoo.com" target="_blank" style="color: #3498db; text-decoration: none;">Yahoo Finance</a></small>
+                    </div>
+                </div>
+                <button type="submit">🔮 Predict Next 5 Days</button>
+            </form>
+        </div>
+
+        {% if error %}
+            <div class="error">
+                <strong>❌ Error:</strong> {{ error }}
+            </div>
+        {% endif %}
+
+        {% if result %}
+            <div class="success">
+                <strong>✅ Prediction Complete for {{ result.ticker }}</strong>
+            </div>
+
+            <!-- PREDICTIONS TABLE -->
+            <div class="table-box">
+                <h4>📊 Next 5 Days Price Movement Predictions</h4>
+                <table class="prediction-table">
+                    <tr>
+                        <th>Date</th>
+                        <th>Predicted Price ($)</th>
+                        <th>Prediction</th>
+                        <th>Probability</th>
+                    </tr>
+                    {% for pred in result.predictions %}
+                    <tr>
+                        <td><strong>{{ pred.date }}</strong></td>
+                        <td style="font-weight: bold; color: #2c3e50;">${{ pred.predicted_price }}</td>
+                        <td>
+                            {% if pred.prediction == "UP" %}
+                                <span style="color: #27ae60; font-weight: bold;">↗️ UP</span>
+                            {% else %}
+                                <span style="color: #e74c3c; font-weight: bold;">↘️ DOWN</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ "{:.4f}".format(pred.probability) }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+
+            <!-- COMPANY STATISTICS -->
+            {% if result.company_stats and not result.company_stats.error %}
+            <div class="table-box">
+                <h4>🏢 Company Statistics (Real-Time)</h4>
+                <div class="company-stats-container">
+                    <!-- Column 1: Basic Info -->
+                    <div class="stats-column">
+                        <h5>📊 Basic Information</h5>
+                        <div class="stat-item">
+                            <strong>Ticker:</strong> {{ result.company_stats.ticker }}
+                        </div>
+                        <div class="stat-item">
+                            <strong>Company:</strong> {{ result.company_stats.company_name }}
+                        </div>
+                        <div class="stat-item">
+                            <strong>Sector:</strong> {{ result.company_stats.sector }}
+                        </div>
+                        <div class="stat-item">
+                            <strong>Industry:</strong> {{ result.company_stats.industry }}
+                        </div>
+                        <div class="stat-item">
+                            <strong>Current Price:</strong> 
+                            {% if result.company_stats.current_price != 'N/A' %}
+                                <span style="color: #27ae60; font-weight: bold;">${{ result.company_stats.current_price }}</span>
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Valuation -->
+                    <div class="stats-column">
+                        <h5>💰 Valuation & Performance</h5>
+                        <div class="stat-item">
+                            <strong>Market Cap:</strong>
+                            {% if result.company_stats.market_cap != 'N/A' %}
+                                ${{ "{:,.0f}".format(result.company_stats.market_cap) }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                        <div class="stat-item">
+                            <strong>P/E Ratio:</strong>
+                            {% if result.company_stats.pe_ratio != 'N/A' %}
+                                {{ result.company_stats.pe_ratio }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                        <div class="stat-item">
+                            <strong>Forward P/E:</strong>
+                            {% if result.company_stats.forward_pe != 'N/A' %}
+                                {{ result.company_stats.forward_pe }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                        <div class="stat-item">
+                            <strong>EPS:</strong>
+                            {% if result.company_stats.eps != 'N/A' %}
+                                ${{ result.company_stats.eps }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                        <div class="stat-item">
+                            <strong>Profit Margin:</strong>
+                            {% if result.company_stats.profit_margin != 'N/A' %}
+                                {{ result.company_stats.profit_margin }}%
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Column 3: Risk & Trading -->
+                    <div class="stats-column">
+                        <h5>📈 Risk & Trading</h5>
+                        <div class="stat-item">
+                            <strong>Beta:</strong>
+                            {% if result.company_stats.beta != 'N/A' %}
+                                {{ result.company_stats.beta }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                        <div class="stat-item">
+                            <strong>52W High:</strong>
+                            {% if result.company_stats.fifty_two_week_high != 'N/A' %}
+                                ${{ result.company_stats.fifty_two_week_high }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                        <div class="stat-item">
+                            <strong>52W Low:</strong>
+                            {% if result.company_stats.fifty_two_week_low != 'N/A' %}
+                                ${{ result.company_stats.fifty_two_week_low }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                        <div class="stat-item">
+                            <strong>Volume:</strong>
+                            {% if result.company_stats.volume != 'N/A' %}
+                                {{ "{:,.0f}".format(result.company_stats.volume) }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Column 4: Financial Health -->
+                    <div class="stats-column">
+                        <h5>🏦 Financial Health</h5>
+                        <div class="stat-item">
+                            <strong>Revenue:</strong>
+                            {% if result.company_stats.revenue != 'N/A' %}
+                                ${{ "{:,.0f}".format(result.company_stats.revenue) }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                        <div class="stat-item">
+                            <strong>Dividend Yield:</strong>
+                            {% if result.company_stats.dividend_yield != 'N/A' %}
+                                {{ result.company_stats.dividend_yield }}%
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                        <div class="stat-item">
+                            <strong>ROE:</strong>
+                            {% if result.company_stats.return_on_equity != 'N/A' %}
+                                {{ result.company_stats.return_on_equity }}%
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                        <div class="stat-item">
+                            <strong>Debt/Equity:</strong>
+                            {% if result.company_stats.debt_to_equity != 'N/A' %}
+                                {{ result.company_stats.debt_to_equity }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% elif result.company_stats and result.company_stats.error %}
+            <div class="error">
+                <strong>⚠️ Company Stats Error:</strong> {{ result.company_stats.error }}
+            </div>
+            {% endif %}
+
+            <!-- FEATURE IMPORTANCE -->
+            <div class="table-box">
+                <h4>🎯 Model Feature Importance</h4>
+                <table class="feature-importance-table">
+                    <tr>
+                        <th>Feature</th>
+                        <th>Importance Score</th>
+                    </tr>
+                    {% for name, value in result.feat_items %}
+                    <tr>
+                        <td><strong>{{ name }}</strong></td>
+                        <td>{{ value }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+
+            <!-- PRICE CHART -->
+            <div class="table-box">
+                <h4>📉 Historical Price Trend</h4>
+                <div class="chart-container">
+                    <canvas id="priceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- VOLATILITY CHART -->
+            <div class="table-box">
+                <h4>📊 Conditional Volatility</h4>
+                <div class="chart-container">
+                    <canvas id="volatilityChart"></canvas>
+                </div>
+            </div>
+
+            <script>
+                // Price Chart
+                const priceCtx = document.getElementById('priceChart').getContext('2d');
+                const priceChart = new Chart(priceCtx, {
+                    type: 'line',
+                    data: {
+                        labels: {{ result.dates | tojson }},
+                        datasets: [{
+                            label: 'Close Price',
+                            data: {{ result.prices | tojson }},
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                ticks: { callback: function(value) { return '$' + value.toFixed(2); } }
+                            }
+                        }
+                    }
+                });
+
+                // Volatility Chart
+                const cvCtx = document.getElementById('volatilityChart').getContext('2d');
+                const cvChart = new Chart(cvCtx, {
+                    type: 'line',
+                    data: {
+                        labels: {{ result.dates | tojson }},
+                        datasets: [{
+                            label: 'Conditional Volatility',
+                            data: {{ result.cv | tojson }},
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true }
+                        },
+                        scales: {
+                            y: { beginAtZero: false }
+                        }
+                    }
+                });
+            </script>
+        {% endif %}
+
+        <!-- Footer -->
+        <div class="footer">
+            Powered by Prakarn(PK)
+        </div>
+    </div>
+</body>
+</html>

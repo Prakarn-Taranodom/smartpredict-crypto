@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Select Clustering Method - {{ market.upper() }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 40px;
+        }
+        .method-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 40px 0;
+        }
+        .method-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border: 3px solid #bdc3c7;
+            border-radius: 15px;
+            padding: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .method-card:hover {
+            transform: translateY(-5px);
+            border-color: #667eea;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        .method-card h2 {
+            color: #2c3e50;
+            margin: 20px 0;
+        }
+        .method-card p {
+            color: #555;
+            line-height: 1.6;
+        }
+        .icon {
+            font-size: 4em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Select Clustering Method</h1>
+        <p class="subtitle">Market: <strong>{{ market.upper() }}</strong></p>
+        <p class="subtitle">Choose the distance metric for clustering analysis</p>
+
+        <div class="method-grid">
+            <div class="method-card" onclick="selectMethod('dtw')">
+                <div class="icon">🔄</div>
+                <h2>DTW</h2>
+                <p><strong>Dynamic Time Warping</strong></p>
+                <p>Best for time series patterns. Captures shape similarity regardless of time shifts.</p>
+                <p><em>Recommended for stock price movements</em></p>
+            </div>
+
+            <div class="method-card" onclick="selectMethod('euclidean')">
+                <div class="icon">📏</div>
+                <h2>Euclidean</h2>
+                <p><strong>Euclidean Distance</strong></p>
+                <p>Standard distance metric. Fast and simple point-to-point comparison.</p>
+                <p><em>Good for general clustering</em></p>
+            </div>
+        </div>
+
+        <a href="/cluster" style="color: #3498db; text-decoration: none;">← Back to Market Selection</a>
+    </div>
+
+    <script>
+        function selectMethod(method) {
+            // Show processing indicator
+            const container = document.querySelector('.container');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.style.cssText = 'margin-top: 30px; color: #667eea; font-size: 1.1em;';
+            loadingDiv.innerHTML = '<div style="border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto;"></div>Processing...';
+            container.appendChild(loadingDiv);
+            
+            const stocks = new URLSearchParams(window.location.search).get('stocks') || '';
+            window.location.href = `/cluster/elbow/{{ market }}?method=${method}${stocks ? '&stocks=' + encodeURIComponent(stocks) : ''}`;
+        }
+    </script>
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</body>
+</html>
