@@ -1,9 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
-from fetch_stock import fetch_stock_data
+from fetch_crypto import fetch_crypto_data as fetch_stock_data
 from volatility_pipeline import compute_conditional_volatility
 from feature_engineering import build_features
 from train_model import predict_next_n_days_prices, train_rf
-from data_preparation import prepare_market_data
+from data_preparation_crypto import prepare_market_data
 from clustering_module import (
     DTWKMeansClustering,
     EuclideanKMeansClustering,
@@ -39,7 +39,7 @@ def predict():
         ticker = request.form.get("ticker", "").upper()
 
         if not ticker:
-            return render_template("predict.html", error="Please enter a stock ticker")
+            return render_template("predict.html", error="Please enter a crypto symbol")
 
         try:
             df = fetch_stock_data(ticker)
@@ -106,29 +106,29 @@ def cluster():
 # =================================================
 # ✅ API: STOCK LIST (แก้ Unexpected token '<')
 # =================================================
-@app.route("/api/stocks/<market>")
-def api_stocks(market):
+@app.route("/api/cryptos/<market>")
+def api_cryptos(market):
     try:
         cv_df = prepare_market_data(
             market,
             window_days=60,
-            include_industry=True
+            include_category=True
         )
 
-        stocks_by_industry = {}
+        cryptos_by_category = {}
 
         for _, row in cv_df.iterrows():
-            industry = row.get("industry", "Unknown")
-            stock_id = row.get("stock_id")
+            category = row.get("category", "Unknown")
+            crypto_id = row.get("crypto_id")
 
-            stocks_by_industry.setdefault(industry, []).append({
-                "symbol": stock_id,
-                "name": stock_id
+            cryptos_by_category.setdefault(category, []).append({
+                "symbol": crypto_id,
+                "name": crypto_id
             })
 
         return jsonify({
-            "stocks_by_industry": stocks_by_industry,
-            "total_stocks": len(cv_df)
+            "cryptos_by_category": cryptos_by_category,
+            "total_cryptos": len(cv_df)
         })
 
     except Exception as e:
@@ -152,29 +152,25 @@ def cluster_elbow(market):
     stocks_param = request.args.get("stocks", "")
     
     try:
-        # ถ้ามี stocks parameter ให้ใช้หุ้นที่เลือก
         if stocks_param:
-            selected_stocks = stocks_param.split(',')
-            suffix = '.BK' if market in ['set50', 'set100'] else None
-            from data_preparation import prepare_stock_data_for_clustering
-            cv_df = prepare_stock_data_for_clustering(
-                selected_stocks,
+            selected_cryptos = stocks_param.split(',')
+            from data_preparation_crypto import prepare_crypto_data_for_clustering
+            cv_df = prepare_crypto_data_for_clustering(
+                selected_cryptos,
                 window_days=60,
-                include_industry=True,
-                add_suffix=suffix
+                include_category=True
             )
         else:
-            # ใช้ทั้ง market
             cv_df = prepare_market_data(
                 market,
                 window_days=60,
-                include_industry=True
+                include_category=True
             )
 
         if len(cv_df) < 3:
             return render_template(
                 "cluster_elbow.html",
-                elbow_data={"error": "Not enough stocks"},
+                elbow_data={"error": "Not enough cryptos"},
                 market=market
             )
 
@@ -218,34 +214,31 @@ def cluster_result(market, k):
     stocks_param = request.args.get("stocks", "")
 
     try:
-        # ถ้ามี stocks parameter ให้ใช้หุ้นที่เลือก
         if stocks_param:
-            selected_stocks = stocks_param.split(',')
-            suffix = '.BK' if market in ['set50', 'set100'] else None
-            from data_preparation import prepare_stock_data_for_clustering
-            cv_df = prepare_stock_data_for_clustering(
-                selected_stocks,
+            selected_cryptos = stocks_param.split(',')
+            from data_preparation_crypto import prepare_crypto_data_for_clustering
+            cv_df = prepare_crypto_data_for_clustering(
+                selected_cryptos,
                 window_days=60,
-                include_industry=True,
-                add_suffix=suffix
+                include_category=True
             )
         else:
             cv_df = prepare_market_data(
                 market,
                 window_days=60,
-                include_industry=True
+                include_category=True
             )
 
         if len(cv_df) < 3:
             return render_template(
                 "cluster_result.html",
-                result={"error": "Not enough stocks for clustering"},
+                result={"error": "Not enough cryptos for clustering"},
                 market=market,
-                industry_filter="all"
+                category_filter="all"
             )
 
         X = cv_df.iloc[:, 1:-1].values
-        stock_ids = cv_df["stock_id"].values
+        crypto_ids = cv_df["crypto_id"].values
 
         clustering = (
             DTWKMeansClustering(k)
@@ -256,8 +249,8 @@ def cluster_result(market, k):
         labels = clustering.fit_predict(X)
         metrics = compute_cluster_metrics(X, labels, method=method)
 
-        assignments_df = clustering.get_cluster_assignments(stock_ids)
-        assignments_df["industry"] = cv_df["industry"].values
+        assignments_df = clustering.get_cluster_assignments(crypto_ids)
+        assignments_df["category"] = cv_df["category"].values
 
         viz_pca = compute_cluster_visualization_data(X, labels, method="pca")
         cluster_stats = get_cluster_statistics(cv_df, labels)
@@ -276,7 +269,7 @@ def cluster_result(market, k):
             "cluster_result.html",
             result=result,
             market=market,
-            industry_filter="all"
+            category_filter="all"
         )
 
     except Exception as e:
@@ -284,7 +277,7 @@ def cluster_result(market, k):
             "cluster_result.html",
             result={"error": str(e)},
             market=market,
-            industry_filter="all"
+            category_filter="all"
         )
 
 

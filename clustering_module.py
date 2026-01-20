@@ -30,9 +30,9 @@ class EuclideanKMeansClustering:
         self.inertia_ = float(model.inertia_)
         return self.labels_
 
-    def get_cluster_assignments(self, stock_ids):
+    def get_cluster_assignments(self, crypto_ids):
         return pd.DataFrame({
-            "stock_id": stock_ids,
+            "crypto_id": crypto_ids,
             "cluster": self.labels_
         })
 
@@ -54,8 +54,8 @@ class DTWKMeansClustering:
             n_clusters=self.n_clusters,
             metric="dtw",
             random_state=self.random_state,
-            n_init=3,  # ลดจาก 5 เป็น 3
-            max_iter=50  # จำกัด iterations
+            n_init=3,
+            max_iter=50
         )
 
         self.labels_ = model.fit_predict(X_reshaped)
@@ -68,9 +68,9 @@ class DTWKMeansClustering:
 
         return self.labels_
 
-    def get_cluster_assignments(self, stock_ids):
+    def get_cluster_assignments(self, crypto_ids):
         return pd.DataFrame({
-            "stock_id": stock_ids,
+            "crypto_id": crypto_ids,
             "cluster": self.labels_
         })
 
@@ -212,7 +212,7 @@ def get_cluster_statistics(df, labels):
         mask = labels == c
         stats[int(c)] = {
             "count": int(mask.sum()),
-            "stocks": df.loc[mask, "stock_id"].tolist()
+            "cryptos": df.loc[mask, "crypto_id"].tolist()
         }
 
     return stats
