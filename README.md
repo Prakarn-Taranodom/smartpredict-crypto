@@ -1,25 +1,27 @@
-# SmartPredict Stock - Deployment Guide
+# SmartPredict Stock
+
+A simple stock clustering web app built with vibe coding, created without prior web development experience
+
+## Features
+
+- Stock price prediction using ARIMA-GARCH and Random Forest
+- Stock clustering analysis with DTW and Euclidean distance
+- Interactive elbow plot for optimal cluster selection
+- Conditional Volatility (CV) analysis
+- Support for NASDAQ-100, SET-50, SET-100, S&P 500
+- Cryptocurrency prediction support (BTC-USD, ETH-USD, etc.)
 
 ## Deploy to Render (Free)
 
 ### Steps:
 
-1. **Push code to GitHub**
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit"
-   git remote add origin YOUR_GITHUB_REPO_URL
-   git push -u origin main
-   ```
-
-2. **Create Render Account**
+1. **Create Render Account**
    - Go to https://render.com
    - Sign up with GitHub
 
-3. **Deploy Web Service**
+2. **Deploy Web Service**
    - Click "New +" → "Web Service"
-   - Connect your GitHub repository
+   - Connect this GitHub repository
    - Settings:
      - Name: `smartpredict-stock`
      - Environment: `Python 3`
@@ -28,7 +30,7 @@
      - Instance Type: `Free`
    - Click "Create Web Service"
 
-4. **Wait for deployment** (5-10 minutes)
+3. **Wait for deployment** (5-10 minutes)
    - Render will automatically build and deploy
    - Your app will be live at: `https://smartpredict-stock.onrender.com`
 
@@ -61,3 +63,12 @@ python app.py
 ```
 
 Visit: http://localhost:5000
+
+## Tech Stack
+
+- Flask (Web Framework)
+- yfinance (Stock Data)
+- scikit-learn (Machine Learning)
+- tslearn (Time Series Clustering)
+- ARIMA-GARCH (Volatility Modeling)
+- Chart.js (Visualization)
