@@ -57,18 +57,22 @@ def prepare_stock_data_for_clustering(stocks, window_days=60, include_industry=F
                 row_data['industry'] = get_stock_industry(ticker)
 
             cv_series_list.append(row_data)
+            print(f"✓ {ticker} processed successfully")
 
         except Exception as e:
-            print(f"Skipping {stock}: {str(e)}")
+            print(f"✗ Skipping {stock}: {str(e)[:50]}")
             failed_stocks.append(stock)
             continue
 
     if not cv_series_list:
-        raise ValueError(f"No valid stocks found. Failed: {', '.join(failed_stocks[:10])}")
+        raise ValueError(f"No valid stocks. All {len(failed_stocks)} stocks failed.")
     
-    print(f"\nSuccessfully processed {len(cv_series_list)}/{total} stocks")
-    if failed_stocks:
-        print(f"Failed stocks: {', '.join(failed_stocks[:10])}{'...' if len(failed_stocks) > 10 else ''}")
+    success_rate = len(cv_series_list) / total * 100
+    print(f"\n✓ Success: {len(cv_series_list)}/{total} ({success_rate:.1f}%)")
+    if failed_stocks and len(failed_stocks) <= 10:
+        print(f"✗ Failed: {', '.join(failed_stocks)}")
+    elif failed_stocks:
+        print(f"✗ Failed: {len(failed_stocks)} stocks")
 
     cv_df = pd.DataFrame(cv_series_list)
     cv_df = cv_df.fillna(0)
