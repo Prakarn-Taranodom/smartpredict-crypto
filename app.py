@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
-from fetch_crypto import fetch_crypto_data as fetch_stock_data
+from flask import Flask, render_template, request, jsonify
+from fetch_coinlore import fetch_crypto_data
+from crypto_stats import get_crypto_stats
 from volatility_pipeline import compute_conditional_volatility
 from feature_engineering import build_features
 from train_model import predict_next_n_days_prices, train_rf
-from data_preparation_crypto import prepare_market_data
+from data_preparation_platform import prepare_platform_data, get_crypto_platforms, get_platform_cryptos, prepare_crypto_data_for_clustering
 from clustering_module import (
     DTWKMeansClustering,
     EuclideanKMeansClustering,
@@ -42,7 +43,7 @@ def predict():
             return render_template("predict.html", error="Please enter a crypto symbol")
 
         try:
-            df = fetch_stock_data(ticker)
+            df = fetch_crypto_data(ticker)
             df_cv = compute_conditional_volatility(df)
             X, y = build_features(df_cv)
 
@@ -64,9 +65,13 @@ def predict():
                 pd.Series(model.feature_importances_, index=X.columns)
                 .sort_values(ascending=False)
             )
+            
+            # Get crypto stats
+            crypto_stats = get_crypto_stats(ticker)
 
             result = {
                 "ticker": ticker,
+                "crypto_stats": crypto_stats,
                 "predictions": [
                     {
                         "date": d,
@@ -106,29 +111,21 @@ def cluster():
 # =================================================
 # ✅ API: STOCK LIST (แก้ Unexpected token '<')
 # =================================================
-@app.route("/api/cryptos/<market>")
-def api_cryptos(market):
+@app.route("/api/cryptos/<platform>")
+def api_cryptos(platform):
     try:
-        cv_df = prepare_market_data(
-            market,
-            window_days=60,
-            include_category=True
-        )
-
-        cryptos_by_category = {}
-
-        for _, row in cv_df.iterrows():
-            category = row.get("category", "Unknown")
-            crypto_id = row.get("crypto_id")
-
-            cryptos_by_category.setdefault(category, []).append({
-                "symbol": crypto_id,
-                "name": crypto_id
+        cryptos = get_platform_cryptos(platform)
+        
+        cryptos_by_category = {platform.title(): []}
+        for crypto in cryptos:
+            cryptos_by_category[platform.title()].append({
+                "symbol": crypto['symbol'],
+                "name": crypto['name']
             })
 
         return jsonify({
             "cryptos_by_category": cryptos_by_category,
-            "total_cryptos": len(cv_df)
+            "total_cryptos": len(cryptos)
         })
 
     except Exception as e:
@@ -138,40 +135,66 @@ def api_cryptos(market):
 # =================================================
 # CLUSTER: Step 1 - Select Method
 # =================================================
-@app.route("/cluster/select-method/<market>")
-def cluster_select_method(market):
-    return render_template("cluster_select_method.html", market=market)
+@app.route("/cluster/select-method/<platform>")
+def cluster_select_method(platform):
+    # Handle multiple platforms
+    platforms_param = request.args.get('platforms', '')
+    if platforms_param:
+        # Multiple platforms selected
+        return render_template("cluster_select_method.html", market='multi', platforms=platforms_param)
+    else:
+        # Single platform
+        return render_template("cluster_select_method.html", market=platform)
 
 
 # =================================================
 # CLUSTER: Step 2 - Show Elbow Plot (รับ stocks)
 # =================================================
-@app.route("/cluster/elbow/<market>")
-def cluster_elbow(market):
+@app.route("/cluster/elbow/<platform>")
+def cluster_elbow(platform):
     method = request.args.get("method", "dtw")
-    stocks_param = request.args.get("stocks", "")
+    cryptos_param = request.args.get("cryptos", "")
+    platforms_param = request.args.get("platforms", "")
     
     try:
-        if stocks_param:
-            selected_cryptos = stocks_param.split(',')
-            from data_preparation_crypto import prepare_crypto_data_for_clustering
+        # Handle multiple platforms
+        if platform == 'multi' and platforms_param:
+            platforms = platforms_param.split(',')
+            all_cryptos = []
+            for p in platforms:
+                p_cryptos = get_platform_cryptos(p)
+                for c in p_cryptos:
+                    c['platform'] = p.title()
+                all_cryptos.extend(p_cryptos)
+            
             cv_df = prepare_crypto_data_for_clustering(
-                selected_cryptos,
+                all_cryptos,
                 window_days=60,
-                include_category=True
+                include_platform=True
+            )
+        elif cryptos_param:
+            selected_cryptos = cryptos_param.split(',')
+            all_cryptos = get_platform_cryptos(platform)
+            crypto_objs = [c for c in all_cryptos if c['symbol'] in selected_cryptos]
+            for c in crypto_objs:
+                c['platform'] = platform.title()
+            cv_df = prepare_crypto_data_for_clustering(
+                crypto_objs,
+                window_days=60,
+                include_platform=True
             )
         else:
-            cv_df = prepare_market_data(
-                market,
+            cv_df = prepare_platform_data(
+                platform,
                 window_days=60,
-                include_category=True
+                include_platform=True
             )
 
         if len(cv_df) < 3:
             return render_template(
                 "cluster_elbow.html",
                 elbow_data={"error": "Not enough cryptos"},
-                market=market
+                market=platform
             )
 
         X = cv_df.iloc[:, 1:-1].values
@@ -189,51 +212,71 @@ def cluster_elbow(market):
 
         elbow_data.update(elbow_info)
         elbow_data["method"] = method
-        elbow_data["stocks"] = stocks_param  # เก็บ stocks ไว้ส่งต่อ
+        elbow_data["cryptos"] = cryptos_param
+        elbow_data["platforms"] = platforms_param
 
         return render_template(
             "cluster_elbow.html",
             elbow_data=elbow_data,
-            market=market
+            market=platform
         )
 
     except Exception as e:
         return render_template(
             "cluster_elbow.html",
             elbow_data={"error": str(e)},
-            market=market
+            market=platform
         )
 
 
 # =================================================
 # CLUSTER RESULT (รับ stocks parameter)
 # =================================================
-@app.route("/cluster/result/<market>/<int:k>")
-def cluster_result(market, k):
+@app.route("/cluster/result/<platform>/<int:k>")
+def cluster_result(platform, k):
     method = request.args.get("method", "dtw")
-    stocks_param = request.args.get("stocks", "")
+    cryptos_param = request.args.get("cryptos", "")
+    platforms_param = request.args.get("platforms", "")
 
     try:
-        if stocks_param:
-            selected_cryptos = stocks_param.split(',')
-            from data_preparation_crypto import prepare_crypto_data_for_clustering
+        # Handle multiple platforms
+        if platform == 'multi' and platforms_param:
+            platforms = platforms_param.split(',')
+            all_cryptos = []
+            for p in platforms:
+                p_cryptos = get_platform_cryptos(p)
+                for c in p_cryptos:
+                    c['platform'] = p.title()
+                all_cryptos.extend(p_cryptos)
+            
             cv_df = prepare_crypto_data_for_clustering(
-                selected_cryptos,
+                all_cryptos,
                 window_days=60,
-                include_category=True
+                include_platform=True
+            )
+        elif cryptos_param:
+            selected_cryptos = cryptos_param.split(',')
+            all_cryptos = get_platform_cryptos(platform)
+            crypto_objs = [c for c in all_cryptos if c['symbol'] in selected_cryptos]
+            for c in crypto_objs:
+                c['platform'] = platform.title()
+            cv_df = prepare_crypto_data_for_clustering(
+                crypto_objs,
+                window_days=60,
+                include_platform=True
             )
         else:
-            cv_df = prepare_market_data(
-                market,
+            cv_df = prepare_platform_data(
+                platform,
                 window_days=60,
-                include_category=True
+                include_platform=True
             )
 
         if len(cv_df) < 3:
             return render_template(
                 "cluster_result.html",
                 result={"error": "Not enough cryptos for clustering"},
-                market=market,
+                market=platform,
                 category_filter="all"
             )
 
@@ -256,7 +299,7 @@ def cluster_result(market, k):
         cluster_stats = get_cluster_statistics(cv_df, labels)
 
         result = {
-            "market": market,
+            "market": platform,
             "method": method,
             "optimal_k": k,
             "metrics": metrics,
@@ -268,7 +311,7 @@ def cluster_result(market, k):
         return render_template(
             "cluster_result.html",
             result=result,
-            market=market,
+            market=platform,
             category_filter="all"
         )
 
@@ -276,7 +319,7 @@ def cluster_result(market, k):
         return render_template(
             "cluster_result.html",
             result={"error": str(e)},
-            market=market,
+            market=platform,
             category_filter="all"
         )
 

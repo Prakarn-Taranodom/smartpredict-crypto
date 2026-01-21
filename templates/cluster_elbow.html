@@ -364,7 +364,7 @@
                     </div>
                     <div class="info-box">
                         <h4>Inertia at Elbow Point</h4>
-                        <p><span class="value">{{ "%.2f" | format(elbow_data.elbow_y_value) }}</span></p>
+                        <p><span class="value">{{ "%.2f" | format(elbow_data.get('elbow_y_value', 0)) }}</span></p>
                     </div>
                 </div>
 
@@ -395,7 +395,7 @@
             const ctx = document.getElementById('elbowChart').getContext('2d');
             
             const elbow_k = elbowData.elbow_k;
-            const elbow_y = elbowData.elbow_y_value;
+            const elbow_y = elbowData.elbow_y_value || 0;
 
             // Create gradient
             const gradientStroke = ctx.createLinearGradient(0, 0, 0, 400);
@@ -456,6 +456,7 @@
                     },
                     scales: {
                         x: {
+                            type: 'linear',
                             title: {
                                 display: true,
                                 text: 'Number of Clusters (K)',
@@ -464,12 +465,14 @@
                             },
                             ticks: {
                                 stepSize: 1,
-                                font: { size: 12 }
+                                font: { size: 12 },
+                                callback: function(value) {
+                                    return Number.isInteger(value) ? value : '';
+                                }
                             },
                             grid: {
                                 color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            min: 0
+                            }
                         },
                         y: {
                             title: {
@@ -535,8 +538,11 @@
         function switchMethod(method) {
             document.getElementById('loadingIndicator').style.display = 'block';
             document.getElementById('elbowChart').style.display = 'none';
-            const stocks = elbowData.stocks || '';
-            const url = `/cluster/elbow/{{ market }}?method=${method}${stocks ? '&stocks=' + encodeURIComponent(stocks) : ''}`;
+            const cryptos = elbowData.cryptos || '';
+            const platforms = elbowData.platforms || '';
+            let url = `/cluster/elbow/{{ market }}?method=${method}`;
+            if (cryptos) url += `&cryptos=${encodeURIComponent(cryptos)}`;
+            if (platforms) url += `&platforms=${encodeURIComponent(platforms)}`;
             window.location.href = url;
         }
 
@@ -548,8 +554,11 @@
             
             const k = elbowData.elbow_k;
             const method = elbowData.method || 'dtw';
-            const stocks = elbowData.stocks || '';
-            const url = `/cluster/result/{{ market }}/${k}?method=${method}${stocks ? '&stocks=' + encodeURIComponent(stocks) : ''}`;
+            const cryptos = elbowData.cryptos || '';
+            const platforms = elbowData.platforms || '';
+            let url = `/cluster/result/{{ market }}/${k}?method=${method}`;
+            if (cryptos) url += `&cryptos=${encodeURIComponent(cryptos)}`;
+            if (platforms) url += `&platforms=${encodeURIComponent(platforms)}`;
             window.location.href = url;
         }
 

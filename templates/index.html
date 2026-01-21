@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SmartPredict Stock</title>
+    <title>SmartPredict Crypto</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
@@ -250,7 +250,7 @@
 
 <body>
     <div class="container">
-        <h1>SmartPredict Stock</h1>
+        <h1>SmartPredict Crypto</h1>
 
         <!-- Feature Selection -->
         <div style="text-align: center; margin-bottom: 40px;">
@@ -259,7 +259,7 @@
                 <div style="text-align: center;">
                     <a href="/predict" style="text-decoration: none;">
                         <button onclick="window.location.href='/predict'" id="predict-btn" class="feature-button predict-btn" style="padding: 25px 40px; font-size: 18px; background: linear-gradient(45deg, #3498db, #2980b9); color: white; border: none; border-radius: 15px; cursor: pointer; box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);">
-                            📈<br>Stock Prediction
+                            📈<br>Crypto Prediction
                         </button>
                     </a>
                     <p style="margin-top: 10px; color: #7f8c8d; font-size: 14px;">Predict next 5 days price movement</p>
@@ -267,10 +267,10 @@
                 <div style="text-align: center;">
                     <a href="/cluster" style="text-decoration: none;">
                         <button onclick="window.location.href='/cluster'" id="cluster-btn" class="feature-button cluster-btn" style="padding: 25px 40px; font-size: 18px; background: linear-gradient(45deg, #9b59b6, #8e44ad); color: white; border: none; border-radius: 15px; cursor: pointer; box-shadow: 0 5px 15px rgba(155, 89, 182, 0.3);">
-                            📊<br>Stock Clustering
+                            📊<br>Crypto Clustering
                         </button>
                     </a>
-                    <p style="margin-top: 10px; color: #7f8c8d; font-size: 14px;">Analyze stock volatility patterns</p>
+                    <p style="margin-top: 10px; color: #7f8c8d; font-size: 14px;">Analyze crypto volatility patterns</p>
                 </div>
             </div>
         </div>
@@ -279,10 +279,10 @@
         <div id="prediction-form" style="display: none;">
             <form method="post" action="/predict">
                 <div style="margin-bottom: 15px;">
-                    <input type="text" name="ticker" placeholder="Enter stock ticker (e.g. AAPL, TSLA, GOOGL)" required style="margin-bottom: 8px;">
+                    <input type="text" name="ticker" placeholder="Enter crypto symbol (e.g. BTC, ETH, BNB)" required style="margin-bottom: 8px;">
                     <div style="font-size: 14px; color: #7f8c8d; text-align: center;">
-                        Enter stock symbol from <a href="https://finance.yahoo.com" target="_blank" style="color: #3498db; text-decoration: none;">Yahoo Finance</a><br>
-                        <small>Examples: AAPL (Apple), MSFT (Microsoft), TSLA (Tesla), GOOGL (Google)</small>
+                        Enter crypto symbol<br>
+                        <small>Examples: BTC (Bitcoin), ETH (Ethereum), BNB (Binance), SOL (Solana)</small>
                     </div>
                 </div>
                 <button type="submit">Predict Next 5 Days</button>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Stock Prediction - SmartPredict Stock</title>
+    <title>Crypto Prediction - SmartPredict Crypto</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -237,21 +237,21 @@
 </head>
 <body>
     <div class="container">
-        <h1>📈 Stock Prediction</h1>
+        <h1>📈 Crypto Prediction</h1>
         
         <a href="/" class="back-button">← Back to Home</a>
 
         <!-- Prediction Form -->
         <div style="margin: 30px 0;">
-            <h3>Enter Stock Ticker</h3>
+            <h3>Enter Crypto Symbol</h3>
             <form method="post" action="/predict">
                 <div style="margin-bottom: 15px;">
-                    <input type="text" name="ticker" placeholder="Enter stock ticker (e.g., AAPL, TSLA, GOOGL)" required>
+                    <input type="text" name="ticker" placeholder="Enter crypto symbol (e.g., BTC, ETH, BNB)" required>
                     <div style="font-size: 14px; color: #7f8c8d; text-align: center; margin-top: 10px;">
-                        <strong>📈 Stocks:</strong> AAPL, MSFT, TSLA, GOOGL, META, NVDA<br>
-                        <strong>💰 Crypto:</strong> BTC-USD, ETH-USD, BNB-USD, SOL-USD, XRP-USD<br>
-                        <small style="color: #e74c3c;">⚠️ For crypto, use format: SYMBOL-USD (e.g., BTC-USD for Bitcoin)</small><br>
-                        <small>Find more symbols at <a href="https://finance.yahoo.com" target="_blank" style="color: #3498db; text-decoration: none;">Yahoo Finance</a></small>
+                        <strong>💰 Popular:</strong> BTC (Bitcoin), ETH (Ethereum), BNB (Binance), SOL (Solana)<br>
+                        <strong>🔥 DeFi:</strong> UNI (Uniswap), AAVE, LINK (Chainlink)<br>
+                        <strong>🎮 Meme:</strong> DOGE (Dogecoin), SHIB (Shiba Inu)<br>
+                        <small>Enter symbol without -USD suffix</small>
                     </div>
                 </div>
                 <button type="submit">🔮 Predict Next 5 Days</button>
@@ -296,149 +296,119 @@
                 </table>
             </div>
 
-            <!-- COMPANY STATISTICS -->
-            {% if result.company_stats and not result.company_stats.error %}
+            <!-- CRYPTO STATISTICS -->
+            {% if result.crypto_stats and not result.crypto_stats.error %}
             <div class="table-box">
-                <h4>🏢 Company Statistics (Real-Time)</h4>
+                <h4>💰 Crypto Statistics (Real-Time)</h4>
                 <div class="company-stats-container">
-                    <!-- Column 1: Basic Info -->
                     <div class="stats-column">
-                        <h5>📊 Basic Information</h5>
+                        <h5>📊 Price Info</h5>
                         <div class="stat-item">
-                            <strong>Ticker:</strong> {{ result.company_stats.ticker }}
+                            <strong>Symbol:</strong> {{ result.crypto_stats.symbol }}
                         </div>
                         <div class="stat-item">
-                            <strong>Company:</strong> {{ result.company_stats.company_name }}
-                        </div>
-                        <div class="stat-item">
-                            <strong>Sector:</strong> {{ result.company_stats.sector }}
-                        </div>
-                        <div class="stat-item">
-                            <strong>Industry:</strong> {{ result.company_stats.industry }}
+                            <strong>Name:</strong> {{ result.crypto_stats.name }}
                         </div>
                         <div class="stat-item">
                             <strong>Current Price:</strong> 
-                            {% if result.company_stats.current_price != 'N/A' %}
-                                <span style="color: #27ae60; font-weight: bold;">${{ result.company_stats.current_price }}</span>
+                            {% if result.crypto_stats.current_price != 'N/A' %}
+                                <span style="color: #27ae60; font-weight: bold;">${{ "{:,.2f}".format(result.crypto_stats.current_price) }}</span>
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                        <div class="stat-item">
+                            <strong>24h High:</strong> 
+                            {% if result.crypto_stats.day_high != 'N/A' %}
+                                ${{ "{:,.2f}".format(result.crypto_stats.day_high) }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                        <div class="stat-item">
+                            <strong>24h Low:</strong> 
+                            {% if result.crypto_stats.day_low != 'N/A' %}
+                                ${{ "{:,.2f}".format(result.crypto_stats.day_low) }}
                             {% else %}
                                 N/A
                             {% endif %}
                         </div>
                     </div>
 
-                    <!-- Column 2: Valuation -->
                     <div class="stats-column">
-                        <h5>💰 Valuation & Performance</h5>
+                        <h5>💎 Market Data</h5>
                         <div class="stat-item">
                             <strong>Market Cap:</strong>
-                            {% if result.company_stats.market_cap != 'N/A' %}
-                                ${{ "{:,.0f}".format(result.company_stats.market_cap) }}
+                            {% if result.crypto_stats.market_cap != 'N/A' %}
+                                ${{ "{:,.0f}".format(result.crypto_stats.market_cap) }}
                             {% else %}
                                 N/A
                             {% endif %}
                         </div>
                         <div class="stat-item">
-                            <strong>P/E Ratio:</strong>
-                            {% if result.company_stats.pe_ratio != 'N/A' %}
-                                {{ result.company_stats.pe_ratio }}
+                            <strong>24h Volume:</strong>
+                            {% if result.crypto_stats.volume_24h != 'N/A' %}
+                                ${{ "{:,.0f}".format(result.crypto_stats.volume_24h) }}
                             {% else %}
                                 N/A
                             {% endif %}
                         </div>
                         <div class="stat-item">
-                            <strong>Forward P/E:</strong>
-                            {% if result.company_stats.forward_pe != 'N/A' %}
-                                {{ result.company_stats.forward_pe }}
+                            <strong>Circulating Supply:</strong>
+                            {% if result.crypto_stats.circulating_supply != 'N/A' %}
+                                {{ "{:,.0f}".format(result.crypto_stats.circulating_supply) }}
                             {% else %}
                                 N/A
                             {% endif %}
                         </div>
                         <div class="stat-item">
-                            <strong>EPS:</strong>
-                            {% if result.company_stats.eps != 'N/A' %}
-                                ${{ result.company_stats.eps }}
+                            <strong>Total Supply:</strong>
+                            {% if result.crypto_stats.total_supply != 'N/A' %}
+                                {{ "{:,.0f}".format(result.crypto_stats.total_supply) }}
                             {% else %}
                                 N/A
                             {% endif %}
                         </div>
                         <div class="stat-item">
-                            <strong>Profit Margin:</strong>
-                            {% if result.company_stats.profit_margin != 'N/A' %}
-                                {{ result.company_stats.profit_margin }}%
+                            <strong>Max Supply:</strong>
+                            {% if result.crypto_stats.max_supply != 'N/A' %}
+                                {{ "{:,.0f}".format(result.crypto_stats.max_supply) }}
                             {% else %}
-                                N/A
+                                ∞ (Unlimited)
                             {% endif %}
                         </div>
                     </div>
 
-                    <!-- Column 3: Risk & Trading -->
                     <div class="stats-column">
-                        <h5>📈 Risk & Trading</h5>
-                        <div class="stat-item">
-                            <strong>Beta:</strong>
-                            {% if result.company_stats.beta != 'N/A' %}
-                                {{ result.company_stats.beta }}
-                            {% else %}
-                                N/A
-                            {% endif %}
-                        </div>
+                        <h5>📈 Price Range</h5>
                         <div class="stat-item">
                             <strong>52W High:</strong>
-                            {% if result.company_stats.fifty_two_week_high != 'N/A' %}
-                                ${{ result.company_stats.fifty_two_week_high }}
+                            {% if result.crypto_stats.week_52_high != 'N/A' %}
+                                ${{ "{:,.2f}".format(result.crypto_stats.week_52_high) }}
                             {% else %}
                                 N/A
                             {% endif %}
                         </div>
                         <div class="stat-item">
                             <strong>52W Low:</strong>
-                            {% if result.company_stats.fifty_two_week_low != 'N/A' %}
-                                ${{ result.company_stats.fifty_two_week_low }}
+                            {% if result.crypto_stats.week_52_low != 'N/A' %}
+                                ${{ "{:,.2f}".format(result.crypto_stats.week_52_low) }}
                             {% else %}
                                 N/A
                             {% endif %}
                         </div>
                         <div class="stat-item">
-                            <strong>Volume:</strong>
-                            {% if result.company_stats.volume != 'N/A' %}
-                                {{ "{:,.0f}".format(result.company_stats.volume) }}
-                            {% else %}
-                                N/A
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- Column 4: Financial Health -->
-                    <div class="stats-column">
-                        <h5>🏦 Financial Health</h5>
-                        <div class="stat-item">
-                            <strong>Revenue:</strong>
-                            {% if result.company_stats.revenue != 'N/A' %}
-                                ${{ "{:,.0f}".format(result.company_stats.revenue) }}
+                            <strong>ATH (All-Time High):</strong>
+                            {% if result.crypto_stats.ath != 'N/A' %}
+                                ${{ "{:,.2f}".format(result.crypto_stats.ath) }}
                             {% else %}
                                 N/A
                             {% endif %}
                         </div>
                         <div class="stat-item">
-                            <strong>Dividend Yield:</strong>
-                            {% if result.company_stats.dividend_yield != 'N/A' %}
-                                {{ result.company_stats.dividend_yield }}%
-                            {% else %}
-                                N/A
-                            {% endif %}
-                        </div>
-                        <div class="stat-item">
-                            <strong>ROE:</strong>
-                            {% if result.company_stats.return_on_equity != 'N/A' %}
-                                {{ result.company_stats.return_on_equity }}%
-                            {% else %}
-                                N/A
-                            {% endif %}
-                        </div>
-                        <div class="stat-item">
-                            <strong>Debt/Equity:</strong>
-                            {% if result.company_stats.debt_to_equity != 'N/A' %}
-                                {{ result.company_stats.debt_to_equity }}
+                            <strong>ATL (All-Time Low):</strong>
+                            {% if result.crypto_stats.atl != 'N/A' %}
+                                ${{ "{:,.2f}".format(result.crypto_stats.atl) }}
                             {% else %}
                                 N/A
                             {% endif %}
@@ -446,9 +416,9 @@
                     </div>
                 </div>
             </div>
-            {% elif result.company_stats and result.company_stats.error %}
+            {% elif result.crypto_stats and result.crypto_stats.error %}
             <div class="error">
-                <strong>⚠️ Company Stats Error:</strong> {{ result.company_stats.error }}
+                <strong>⚠️ Crypto Stats Error:</strong> {{ result.crypto_stats.error }}
             </div>
             {% endif %}
 

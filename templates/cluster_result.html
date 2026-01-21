@@ -153,12 +153,12 @@
 
 {% for cluster_id, stats in result.cluster_stats.items() %}
 <div class="cluster-section">
-    <h3>Cluster {{ cluster_id + 1 }} ({{ stats.count }} stocks)</h3>
+    <h3>Cluster {{ cluster_id + 1 }} ({{ stats.count }} cryptos)</h3>
 
     {% for a in result.assignments %}
         {% if a.cluster == cluster_id %}
             <span class="stock-item">
-                {{ a.stock_id }} <small>({{ a.industry }})</small>
+                {{ a.crypto_id }} <small>({{ a.category }})</small>
             </span>
         {% endif %}
     {% endfor %}
