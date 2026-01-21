@@ -4,13 +4,13 @@ import requests
 from datetime import datetime, timedelta
 import time
 
-def fetch_crypto_data(symbol, period="5y"):
+def fetch_crypto_data(symbol, period="2y"):
     """
     Fetch crypto data from CoinLore API
     
     Args:
         symbol: Crypto symbol (e.g., 'BTC', 'ETH')
-        period: Time period (default '5y')
+        period: Time period (default '2y' - reduced for memory)
     
     Returns:
         pandas.DataFrame: OHLCV data
@@ -50,24 +50,36 @@ def fetch_crypto_data(symbol, period="5y"):
         ticker_data = data[0]
         current_price = float(ticker_data.get('price_usd', 0))
         
-        # Calculate days
-        days_map = {'1y': 365, '2y': 730, '5y': 1825, '6mo': 180, '3mo': 90}
-        days = days_map.get(period, 1825)
+        if current_price == 0:
+            raise ValueError(f"Invalid price for {symbol}")
         
-        # Generate synthetic historical data based on current price
+        # Calculate days (reduced to 730 days = 2 years for memory)
+        days_map = {'1y': 365, '2y': 730, '5y': 730, '6mo': 180, '3mo': 90}
+        days = days_map.get(period, 730)
+        
+        # Generate synthetic historical data starting from realistic past price
         dates = pd.date_range(end=datetime.now(), periods=days, freq='D')
         
-        # Create realistic price movement (reduce memory usage)
-        np.random.seed(int(current_price))  # Consistent data
-        returns = np.random.normal(0, 0.02, days)
-        prices = current_price * np.cumprod(1 + returns)
+        # Start from lower price and grow to current (more realistic)
+        np.random.seed(coin_id)  # Consistent per coin
+        
+        # Calculate starting price (assume 50% growth over period)
+        start_price = current_price / 1.5
+        
+        # Generate price path that ends at current price
+        daily_returns = np.random.normal(0.001, 0.03, days-1)  # Slight upward bias
+        price_multipliers = np.concatenate([[1.0], np.cumprod(1 + daily_returns)])
+        
+        # Scale to end at current price
+        prices = start_price * price_multipliers
+        prices = prices * (current_price / prices[-1])  # Ensure last price = current
         
         # Create DataFrame with less memory
         df = pd.DataFrame({
             'Close': prices.astype(np.float32),
             'Open': (prices * (1 + np.random.normal(0, 0.005, days))).astype(np.float32),
-            'High': (prices * (1 + np.abs(np.random.normal(0, 0.01, days)))).astype(np.float32),
-            'Low': (prices * (1 - np.abs(np.random.normal(0, 0.01, days)))).astype(np.float32),
+            'High': (prices * (1 + np.abs(np.random.normal(0, 0.015, days)))).astype(np.float32),
+            'Low': (prices * (1 - np.abs(np.random.normal(0, 0.015, days)))).astype(np.float32),
             'Volume': np.abs(np.random.normal(1000000, 500000, days)).astype(np.float32)
         }, index=dates)
         
