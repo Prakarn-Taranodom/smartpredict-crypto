@@ -57,16 +57,18 @@ def fetch_crypto_data(symbol, period="5y"):
         # Generate synthetic historical data based on current price
         dates = pd.date_range(end=datetime.now(), periods=days, freq='D')
         
-        # Create realistic price movement
+        # Create realistic price movement (reduce memory usage)
+        np.random.seed(int(current_price))  # Consistent data
         returns = np.random.normal(0, 0.02, days)
         prices = current_price * np.cumprod(1 + returns)
         
+        # Create DataFrame with less memory
         df = pd.DataFrame({
-            'Close': prices,
-            'Open': prices * (1 + np.random.normal(0, 0.005, days)),
-            'High': prices * (1 + np.abs(np.random.normal(0, 0.01, days))),
-            'Low': prices * (1 - np.abs(np.random.normal(0, 0.01, days))),
-            'Volume': np.abs(np.random.normal(1000000, 500000, days))
+            'Close': prices.astype(np.float32),
+            'Open': (prices * (1 + np.random.normal(0, 0.005, days))).astype(np.float32),
+            'High': (prices * (1 + np.abs(np.random.normal(0, 0.01, days)))).astype(np.float32),
+            'Low': (prices * (1 - np.abs(np.random.normal(0, 0.01, days)))).astype(np.float32),
+            'Volume': np.abs(np.random.normal(1000000, 500000, days)).astype(np.float32)
         }, index=dates)
         
         df = df[['Open', 'High', 'Low', 'Close', 'Volume']]
