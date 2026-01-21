@@ -22,7 +22,15 @@ def fetch_crypto_data(symbol, period="5y"):
         'VET': 'vechain', 'FIL': 'filecoin', 'TRX': 'tron', 'NEAR': 'near',
         'APT': 'aptos', 'ARB': 'arbitrum', 'SHIB': 'shiba-inu', 'AAVE': 'aave',
         'MKR': 'maker', 'COMP': 'compound-governance-token', 'CRV': 'curve-dao-token',
-        'CAKE': 'pancakeswap-token', 'SUSHI': 'sushi', 'OP': 'optimism'
+        'CAKE': 'pancakeswap-token', 'SUSHI': 'sushi', 'OP': 'optimism',
+        'USDT': 'tether', 'USDC': 'usd-coin', 'DAI': 'dai', 'BUSD': 'binance-usd',
+        'SNX': 'synthetix-network-token', 'LDO': 'lido-dao', 'XVS': 'venus',
+        'ALPACA': 'alpaca-finance', 'RAY': 'raydium', 'SRM': 'serum',
+        'JOE': 'joe', 'IMX': 'immutable-x', 'APE': 'apecoin',
+        'SAND': 'the-sandbox', 'MANA': 'decentraland', 'AXS': 'axie-infinity',
+        'GALA': 'gala', 'FET': 'fetch-ai', 'OCEAN': 'ocean-protocol',
+        'GRT': 'the-graph', 'RNDR': 'render-token', 'PEPE': 'pepe',
+        'FLOKI': 'floki', 'ICP': 'internet-computer'
     }
     
     coin_id = symbol_to_id.get(symbol.upper())
