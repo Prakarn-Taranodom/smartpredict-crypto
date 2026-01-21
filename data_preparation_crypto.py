@@ -1,5 +1,5 @@
 import pandas as pd
-from fetch_crypto import fetch_crypto_data
+from fetch_coinlore import fetch_crypto_data
 from volatility_pipeline import compute_conditional_volatility
 
 def get_crypto_markets():

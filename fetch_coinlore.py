@@ -3,24 +3,9 @@ import requests
 from datetime import datetime, timedelta
 import time
 
-def get_coinlore_id(symbol):
-    """Get Coinlore coin ID from symbol"""
-    symbol_to_id = {
-        'BTC': 90, 'ETH': 80, 'BNB': 2710, 'XRP': 58,
-        'ADA': 257, 'DOGE': 2, 'SOL': 48543, 'DOT': 35683,
-        'MATIC': 33536, 'LTC': 1, 'AVAX': 44883, 'LINK': 2321,
-        'UNI': 33538, 'ATOM': 33285, 'XLM': 4, 'ALGO': 33234,
-        'VET': 33285, 'FIL': 33536, 'TRX': 2713, 'NEAR': 44444,
-        'APT': 50000, 'ARB': 51000, 'SHIB': 44444, 'AAVE': 33234,
-        'MKR': 33285, 'COMP': 33537, 'CRV': 33536, 'CAKE': 33539,
-        'SUSHI': 33543, 'OP': 50500
-    }
-    return symbol_to_id.get(symbol.upper())
-
 def fetch_crypto_data(symbol, period="5y"):
     """
-    Fetch crypto data from Coinlore API
-    Falls back to yfinance if Coinlore fails
+    Fetch crypto data from CoinGecko API (free, no API key needed)
     
     Args:
         symbol: Crypto symbol (e.g., 'BTC', 'ETH')
@@ -29,47 +14,58 @@ def fetch_crypto_data(symbol, period="5y"):
     Returns:
         pandas.DataFrame: OHLCV data
     """
-    coin_id = get_coinlore_id(symbol)
+    symbol_to_id = {
+        'BTC': 'bitcoin', 'ETH': 'ethereum', 'BNB': 'binancecoin', 'XRP': 'ripple',
+        'ADA': 'cardano', 'DOGE': 'dogecoin', 'SOL': 'solana', 'DOT': 'polkadot',
+        'MATIC': 'matic-network', 'LTC': 'litecoin', 'AVAX': 'avalanche-2', 'LINK': 'chainlink',
+        'UNI': 'uniswap', 'ATOM': 'cosmos', 'XLM': 'stellar', 'ALGO': 'algorand',
+        'VET': 'vechain', 'FIL': 'filecoin', 'TRX': 'tron', 'NEAR': 'near',
+        'APT': 'aptos', 'ARB': 'arbitrum', 'SHIB': 'shiba-inu', 'AAVE': 'aave',
+        'MKR': 'maker', 'COMP': 'compound-governance-token', 'CRV': 'curve-dao-token',
+        'CAKE': 'pancakeswap-token', 'SUSHI': 'sushi', 'OP': 'optimism'
+    }
     
-    if coin_id:
-        try:
-            # Try Coinlore API first
-            url = f"https://api.coinlore.net/api/coin/markets/?id={coin_id}"
-            response = requests.get(url, timeout=10)
-            
-            if response.status_code == 200:
-                data = response.json()
-                
-                # If Coinlore works, use it
-                # Otherwise fall through to yfinance
-                if data and len(data) > 0:
-                    # Coinlore doesn't provide historical OHLCV easily
-                    # So we'll use yfinance as primary source
-                    pass
-        except:
-            pass
+    coin_id = symbol_to_id.get(symbol.upper())
+    if not coin_id:
+        raise ValueError(f"Unsupported crypto: {symbol}")
     
-    # Use yfinance as primary data source (reliable and free)
     try:
-        import yfinance as yf
-        import os
-        os.environ['YF_ENABLE_CACHE'] = '0'
+        # Calculate days based on period
+        days_map = {'1y': 365, '2y': 730, '5y': 1825, '6mo': 180, '3mo': 90}
+        days = days_map.get(period, 1825)
         
-        ticker = f"{symbol.upper()}-USD"
-        crypto = yf.Ticker(ticker)
-        df = crypto.history(period=period)
+        # Fetch from CoinGecko
+        url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
+        params = {'vs_currency': 'usd', 'days': days, 'interval': 'daily'}
         
-        if df.empty:
-            raise ValueError(f"No data found for {symbol}")
+        response = requests.get(url, params=params, timeout=30)
+        response.raise_for_status()
+        data = response.json()
         
-        required_cols = ['Open', 'High', 'Low', 'Close', 'Volume']
-        if not all(col in df.columns for col in required_cols):
-            raise ValueError(f"Missing required columns for {symbol}")
+        # Parse data
+        prices = data.get('prices', [])
+        volumes = data.get('total_volumes', [])
         
-        df = df[required_cols].dropna()
+        if not prices or len(prices) < 30:
+            raise ValueError(f"{symbol}: Insufficient data")
         
-        if len(df) < 30:
-            raise ValueError(f"{symbol}: Only {len(df)} days of data (need 30+)")
+        # Create DataFrame
+        df = pd.DataFrame(prices, columns=['timestamp', 'Close'])
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+        df.set_index('timestamp', inplace=True)
+        
+        # Add volume
+        vol_df = pd.DataFrame(volumes, columns=['timestamp', 'Volume'])
+        vol_df['timestamp'] = pd.to_datetime(vol_df['timestamp'], unit='ms')
+        vol_df.set_index('timestamp', inplace=True)
+        df['Volume'] = vol_df['Volume']
+        
+        # Create OHLC from Close (approximation)
+        df['Open'] = df['Close']
+        df['High'] = df['Close'] * 1.02
+        df['Low'] = df['Close'] * 0.98
+        
+        df = df[['Open', 'High', 'Low', 'Close', 'Volume']].dropna()
         
         return df
         
