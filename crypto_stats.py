@@ -1,8 +1,8 @@
-import yfinance as yf
+import requests
 
 def get_crypto_stats(symbol):
     """
-    Get crypto statistics from yfinance
+    Get crypto statistics from CoinLore API
     
     Args:
         symbol: Crypto symbol (e.g., 'BTC', 'ETH')
@@ -11,26 +11,36 @@ def get_crypto_stats(symbol):
         dict: Crypto statistics
     """
     try:
-        ticker = f"{symbol.upper()}-USD"
-        crypto = yf.Ticker(ticker)
-        info = crypto.info
+        # Get all tickers from CoinLore
+        url = "https://api.coinlore.net/api/tickers/"
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        # Find the crypto by symbol
+        crypto_data = None
+        for crypto in data.get('data', []):
+            if crypto.get('symbol', '').upper() == symbol.upper():
+                crypto_data = crypto
+                break
+        
+        if not crypto_data:
+            return {
+                'symbol': symbol.upper(),
+                'error': 'Crypto not found'
+            }
         
         stats = {
-            'symbol': symbol.upper(),
-            'name': info.get('name', symbol),
-            'current_price': info.get('regularMarketPrice', info.get('currentPrice', 'N/A')),
-            'market_cap': info.get('marketCap', 'N/A'),
-            'volume_24h': info.get('volume24Hr', info.get('volume', 'N/A')),
-            'circulating_supply': info.get('circulatingSupply', 'N/A'),
-            'total_supply': info.get('totalSupply', 'N/A'),
-            'max_supply': info.get('maxSupply', 'N/A'),
-            'day_high': info.get('dayHigh', 'N/A'),
-            'day_low': info.get('dayLow', 'N/A'),
-            'week_52_high': info.get('fiftyTwoWeekHigh', 'N/A'),
-            'week_52_low': info.get('fiftyTwoWeekLow', 'N/A'),
-            'price_change_24h': info.get('regularMarketChangePercent', 'N/A'),
-            'ath': info.get('fiftyTwoWeekHigh', 'N/A'),
-            'atl': info.get('fiftyTwoWeekLow', 'N/A')
+            'symbol': crypto_data.get('symbol', symbol.upper()),
+            'name': crypto_data.get('name', symbol),
+            'current_price': float(crypto_data.get('price_usd', 0)),
+            'market_cap': float(crypto_data.get('market_cap_usd', 0)),
+            'volume_24h': float(crypto_data.get('volume24', 0)),
+            'circulating_supply': float(crypto_data.get('csupply', 0)),
+            'total_supply': float(crypto_data.get('tsupply', 0)),
+            'max_supply': float(crypto_data.get('msupply', 0)) if crypto_data.get('msupply') else 'N/A',
+            'price_change_24h': float(crypto_data.get('percent_change_24h', 0)),
+            'rank': crypto_data.get('rank', 'N/A')
         }
         
         return stats
